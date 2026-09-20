@@ -1,7 +1,11 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    ZoneInfo = None
 import requests
 import re
 
@@ -20,6 +24,29 @@ session.headers.update({
     "User-Agent": "SaturdayHQ/1.0",
     "Accept": "application/json,text/plain,*/*",
 })
+
+
+def eastern_now():
+    """Return current time in US Eastern time.
+
+    Render runs in UTC, while Saturday HQ displays game-day data in
+    Eastern Time. Use the system timezone database when available, with
+    a fixed EDT fallback so local Windows testing still works without
+    the optional tzdata package.
+    """
+    if ZoneInfo is not None:
+        try:
+            return datetime.now(timezone.utc).astimezone(
+                ZoneInfo("America/New_York")
+            )
+        except Exception:
+            pass
+
+    # Fallback for environments without the IANA timezone database.
+    # The live 2026 college-football season is currently in EDT (UTC-4).
+    return datetime.now(timezone.utc).astimezone(
+        timezone(timedelta(hours=-4))
+    )
 
 
 # =========================================================
@@ -1223,15 +1250,9 @@ _scores_cache = {
 
 
 def get_current_scores():
-    """
-    Get college football games for today from the NCAA API.
+    """Get FBS college-football games for the current Eastern date."""
 
-    NCAA returns dates as MM/DD/YYYY, so we compare against
-    that format instead of ISO YYYY-MM-DD.
-    """
-
-    now = datetime.now()
-
+    now = eastern_now()
     today_ncaa = now.strftime("%m/%d/%Y")
     today_iso = now.strftime("%Y-%m-%d")
 
@@ -1247,37 +1268,26 @@ def get_current_scores():
     all_games = []
     seen_ids = set()
 
-    # NCAA FBS weeks.
+    # NCAA FBS uses weekly scoreboards. Check all regular-season and
+    # postseason weeks so the current date is found regardless of the
+    # server's ISO week numbering or the NCAA's week numbering.
     for week in range(1, 19):
-
         try:
             data = get_scoreboard_for_week(week)
-
         except Exception:
             continue
 
         for raw_game in data.get("games", []):
-
             try:
                 game = normalize_game(raw_game)
-
             except Exception:
                 continue
 
-            game_id = str(
-                game.get("id") or ""
-            )
-
+            game_id = str(game.get("id") or "")
             if game_id and game_id in seen_ids:
                 continue
-
             if game_id:
                 seen_ids.add(game_id)
-
-            # -------------------------------------------------
-            # NCAA date format:
-            # 09/19/2026
-            # -------------------------------------------------
 
             raw_game_data = (
                 raw_game.get("game", {})
@@ -1286,18 +1296,12 @@ def get_current_scores():
             )
 
             start_date = str(
-                raw_game_data.get(
-                    "startDate",
-                    ""
-                )
+                raw_game_data.get("startDate", "")
             )
+            game_date = str(game.get("date_raw") or "")
 
-            # Also support ISO dates if another NCAA
-            # response format is encountered.
-            game_date = str(
-                game.get("date_raw") or ""
-            )
-
+            # The NCAA feed normally uses MM/DD/YYYY. Keep ISO support
+            # for alternate response formats.
             if (
                 today_ncaa not in start_date
                 and today_iso not in game_date
@@ -1332,9 +1336,7 @@ def get_current_scores():
         "live_games": live_games,
         "final_games": final_games,
         "total_games": len(all_games),
-        "updated": datetime.now()
-            .strftime("%I:%M %p")
-            .lstrip("0"),
+        "updated": now.strftime("%I:%M %p").lstrip("0"),
         "date": today_iso,
     }
 
@@ -1342,6 +1344,7 @@ def get_current_scores():
     _scores_cache["data"] = result
 
     return result
+
 
 
 @app.get("/api/scores")
@@ -1372,14 +1375,11 @@ def api_scores():
     response_class=HTMLResponse,
 )
 def home(request: Request):
-
     try:
         score_data = get_current_scores()
-
         games = score_data.get("games", [])
         live_games = score_data.get("live_games", 0)
         final_games = score_data.get("final_games", 0)
-
     except Exception:
         games = []
         live_games = 0
@@ -1392,78 +1392,6 @@ def home(request: Request):
             "games": games,
             "live_games": live_games,
             "final_games": final_games,
-            "local_date": datetime.now().strftime("%Y-%m-%d"),
+            "local_date": eastern_now().strftime("%Y-%m-%d"),
         },
     )
-
-    try:
-
-        today = datetime.now().strftime(
-            "%Y/%m/%d"
-        )
-
-        data = ncaa_get(
-            f"/scoreboard/football/fbs/"
-            f"{datetime.now().year}/"
-            f"{datetime.now().isocalendar().week}/"
-            f"all-conf"
-        )
-
-        games = []
-
-        for raw_game in data.get(
-            "games",
-            []
-        ):
-
-            try:
-
-                games.append(
-                    normalize_game(
-                        raw_game
-                    )
-                )
-
-            except Exception:
-
-                continue
-
-    except Exception as exc:
-
-        games = []
-
-    live_games = sum(
-        1
-        for game in games
-        if game.get(
-            "state"
-        ) == "in"
-    )
-
-    final_games = sum(
-        1
-        for game in games
-        if game.get(
-            "state"
-        ) == "post"
-    )
-
-    return templates.TemplateResponse(
-        request=request,
-        name="index.html",
-        context={
-            "games": games,
-
-            "live_games":
-                live_games,
-
-            "final_games":
-                final_games,
-
-            "local_date":
-                datetime.now().strftime(
-                    "%Y-%m-%d"
-                ),
-        },
-    )
-
