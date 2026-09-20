@@ -8,7 +8,7 @@ app = FastAPI()
 
 templates = Jinja2Templates(directory="templates")
 
-BASE_URL = "https://site.api.espn.com/apis/site/v2/sports/football/college-football"
+BASE_URL = "https://site.web.api.espn.com/apis/site/v2/sports/football/college-football"
 
 ESPN_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
