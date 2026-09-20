@@ -1641,7 +1641,16 @@ async function openTeam(team) {
             await response.json();
 
 
-        if (!data.schedule || data.schedule.length === 0) {
+                // The API may return the schedule as either
+        // "schedule" or "games". Use whichever exists.
+        const schedule =
+            Array.isArray(data.schedule)
+                ? data.schedule
+                : Array.isArray(data.games)
+                    ? data.games
+                    : [];
+
+        if (schedule.length === 0) {
 
             container.innerHTML = `
                 <div class="empty">
@@ -1661,7 +1670,7 @@ async function openTeam(team) {
         let losses = 0;
         let ties = 0;
 
-        data.schedule.forEach(game => {
+        schedule.forEach(game => {
 
             if (game.result === "W") {
                 wins++;
@@ -1680,7 +1689,7 @@ async function openTeam(team) {
 
         // Build schedule rows
         const rows =
-            data.schedule.map(game => {
+            schedule.map(game => {
 
                 const date =
                     game.date
@@ -2480,3 +2489,4 @@ document.addEventListener("DOMContentLoaded", () => {
 
 </body>
 </html>
+
