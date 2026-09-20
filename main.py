@@ -10,16 +10,8 @@ templates = Jinja2Templates(directory="templates")
 
 BASE_URL = "https://site.web.api.espn.com/apis/site/v2/sports/football/college-football"
 
-ESPN_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
-    "Accept": "application/json,text/plain,*/*",
-    "Referer": "https://www.espn.com/",
-    "Origin": "https://www.espn.com",
-}
-
 SCOREBOARD_URL = f"{BASE_URL}/scoreboard"
 TEAMS_URL = f"{BASE_URL}/teams"
-SUMMARY_URL = f"{BASE_URL}/summary"
 
 
 def espn_get(url, params=None):
@@ -27,7 +19,9 @@ def espn_get(url, params=None):
         url,
         params=params,
         timeout=15,
-        headers=ESPN_HEADERS
+        headers={
+            "User-Agent": "Mozilla/5.0"
+        }
     )
     response.raise_for_status()
     return response.json()
@@ -38,9 +32,7 @@ def espn_get(url, params=None):
 # ---------------------------------------------------------
 
 def get_games():
-    # ESPN timestamps/data are UTC-facing; use Eastern Time for the site's game day.
-    from zoneinfo import ZoneInfo
-    today = datetime.now(ZoneInfo("America/New_York")).strftime("%Y%m%d")
+    today = datetime.now().strftime("%Y%m%d")
 
     data = espn_get(
         SCOREBOARD_URL,
@@ -107,110 +99,6 @@ def get_games():
             continue
 
     return games
-
-
-# ---------------------------------------------------------
-# GAME CENTER / PLAY-BY-PLAY
-# ---------------------------------------------------------
-
-def get_game_summary(event_id):
-    """Return live/final game details, situation, and play-by-play."""
-    data = espn_get(
-        SUMMARY_URL,
-        {"event": str(event_id)}
-    )
-
-    header = data.get("header", {})
-    competitions = header.get("competitions", [])
-    competition = competitions[0] if competitions else {}
-    competitors = competition.get("competitors", [])
-
-    home = next(
-        (c for c in competitors if c.get("homeAway") == "home"),
-        {}
-    )
-    away = next(
-        (c for c in competitors if c.get("homeAway") == "away"),
-        {}
-    )
-
-    status = competition.get("status", {})
-    status_type = status.get("type", {})
-    situation = competition.get("situation", {}) or data.get("situation", {}) or {}
-
-    # ESPN sometimes puts the live situation under the first team
-    # competition object and sometimes exposes it in the summary.
-    possession = situation.get("possession")
-    if isinstance(possession, dict):
-        possession_id = possession.get("id")
-    else:
-        possession_id = possession
-
-    plays = []
-    for play in data.get("plays", []):
-        plays.append({
-            "id": play.get("id"),
-            "text": play.get("text", ""),
-            "short_text": play.get("shortText", play.get("text", "")),
-            "clock": (play.get("clock", {}) or {}).get("displayValue", ""),
-            "period": (play.get("period", {}) or {}).get("number"),
-            "down": play.get("start", {}).get("down"),
-            "distance": play.get("start", {}).get("distance"),
-            "yard_line": play.get("start", {}).get("yardLine"),
-            "home_score": play.get("homeScore"),
-            "away_score": play.get("awayScore"),
-            "scoring_play": play.get("scoringPlay", False),
-            "type": (play.get("type", {}) or {}).get("text", "")
-        })
-
-    return {
-        "id": str(event_id),
-        "name": header.get("season", {}).get("displayName", ""),
-        "short_name": competition.get("shortName", ""),
-        "date": competition.get("date", header.get("date", "")),
-        "status": {
-            "state": status_type.get("state", "pre"),
-            "description": status_type.get("description", "Scheduled"),
-            "detail": status_type.get("shortDetail", ""),
-            "clock": status.get("displayClock", ""),
-            "period": status.get("period")
-        },
-        "away": {
-            "id": away.get("team", {}).get("id"),
-            "name": away.get("team", {}).get("displayName", "Unknown"),
-            "abbreviation": away.get("team", {}).get("abbreviation", ""),
-            "score": away.get("score", "0"),
-            "record": away.get("record", [{}])[0].get("summary", "") if away.get("record") else ""
-        },
-        "home": {
-            "id": home.get("team", {}).get("id"),
-            "name": home.get("team", {}).get("displayName", "Unknown"),
-            "abbreviation": home.get("team", {}).get("abbreviation", ""),
-            "score": home.get("score", "0"),
-            "record": home.get("record", [{}])[0].get("summary", "") if home.get("record") else ""
-        },
-        "situation": {
-            "possession": possession_id,
-            "down": situation.get("down"),
-            "distance": situation.get("distance"),
-            "yard_line": situation.get("yardLine"),
-            "is_red_zone": situation.get("isRedZone", False),
-            "down_distance_text": situation.get("downDistanceText", ""),
-            "possession_text": situation.get("possessionText", "")
-        },
-        "plays": plays
-    }
-
-
-@app.get("/api/game/{event_id}")
-def api_game(event_id: str):
-    try:
-        return get_game_summary(event_id)
-    except Exception as e:
-        return JSONResponse(
-            status_code=500,
-            content={"error": str(e)}
-        )
 
 
 # ---------------------------------------------------------
@@ -539,6 +427,84 @@ def schedule_page(
 
 
 # ---------------------------------------------------------
+# TEAM SEARCH
+# ---------------------------------------------------------
+
+@app.get("/api/team-search/{query}")
+def api_team_search(query: str):
+    """Find a college football team by name, abbreviation, or nickname."""
+    try:
+        teams = get_all_teams()
+        q = query.strip().lower()
+
+        if not q:
+            return JSONResponse(
+                status_code=400,
+                content={"success": False, "error": "Search query is required."}
+            )
+
+        # Exact/strong matches first.
+        exact = []
+        partial = []
+        for team in teams:
+            fields = [
+                str(team.get("name", "")).lower(),
+                str(team.get("short_name", "")).lower(),
+                str(team.get("abbreviation", "")).lower(),
+            ]
+            if q in fields:
+                exact.append(team)
+            elif any(q in field for field in fields):
+                partial.append(team)
+
+        matches = exact or partial
+        if not matches:
+            return JSONResponse(
+                status_code=404,
+                content={"success": False, "error": "Team not found."}
+            )
+
+        team = matches[0]
+        return {
+            "success": True,
+            "team_id": team["id"],
+            "team": team,
+            "matches": matches[:10],
+        }
+
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": str(e)}
+        )
+
+
+# ---------------------------------------------------------
+# GAME CENTER / PLAY-BY-PLAY
+# ---------------------------------------------------------
+
+def get_game_summary(event_id: str):
+    """Return ESPN's full game summary, including situation and plays."""
+    if not event_id:
+        raise ValueError("A game ID is required.")
+
+    url = f"{BASE_URL}/summary"
+    return espn_get(url, {"event": str(event_id)})
+
+
+@app.get("/api/game/{event_id}")
+def api_game(event_id: str):
+    try:
+        data = get_game_summary(event_id)
+        return data
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e), "event_id": event_id}
+        )
+
+
+# ---------------------------------------------------------
 # RANKINGS
 # ---------------------------------------------------------
 
@@ -548,14 +514,14 @@ def get_rankings():
     # includes rankings directly in the scoreboard response.
 
     try:
-        from zoneinfo import ZoneInfo
-        today = datetime.now(ZoneInfo("America/New_York")).strftime("%Y%m%d")
+        today = datetime.now().strftime("%Y%m%d")
 
         data = espn_get(
             SCOREBOARD_URL,
             {
                 "dates": today,
-                "limit": 500
+                "groups": 80,
+            "limit": 100
             }
         )
 
