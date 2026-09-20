@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+﻿from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from datetime import datetime, timezone, timedelta
@@ -239,7 +239,7 @@ def normalize_game(old_game):
     if state == "in":
 
         detail = (
-            " • ".join(
+            " â€¢ ".join(
                 detail_parts
             )
             or "LIVE"
@@ -556,83 +556,76 @@ def team_matches_game(
     selected,
     game,
 ):
+    """
+    Return which side the selected team is on.
 
-    target_names = {
-        str(
-            selected.get(
-                "name",
-                ""
-            )
-        ).lower(),
+    IMPORTANT:
+    Do exact normalized-name matching only.
+    Substring matching is intentionally avoided because:
+      Alabama != South Alabama
+      Tennessee != Tennessee Tech
+    """
 
-        str(
-            selected.get(
-                "short_name",
-                ""
-            )
-        ).lower(),
+    selected_id = str(
+        selected.get("id", "")
+    ).strip().lower()
 
-        str(
-            selected.get(
-                "id",
-                ""
-            )
-        ).lower(),
-    }
+    selected_name = str(
+        selected.get("name", "")
+    ).strip().lower()
+
+    selected_short = str(
+        selected.get("short_name", "")
+    ).strip().lower()
 
     home = str(
-        game.get(
-            "home",
-            ""
-        )
-    ).lower()
+        game.get("home", "")
+    ).strip().lower()
 
     away = str(
-        game.get(
-            "away",
-            ""
+        game.get("away", "")
+    ).strip().lower()
+
+    # Exact ID matching when IDs are available.
+    selected_game_home_id = str(
+        game.get("home_id", "")
+    ).strip().lower()
+
+    selected_game_away_id = str(
+        game.get("away_id", "")
+    ).strip().lower()
+
+    if selected_id:
+        if (
+            selected_game_home_id
+            and selected_game_home_id == selected_id
+        ):
+            return "home"
+
+        if (
+            selected_game_away_id
+            and selected_game_away_id == selected_id
+        ):
+            return "away"
+
+    # Exact display-name matching.
+    valid_names = {
+        name
+        for name in (
+            selected_name,
+            selected_short,
+            selected_id,
         )
-    ).lower()
+        if name
+    }
 
-    for target in target_names:
+    if home in valid_names:
+        return "home"
 
-        if not target:
-            continue
-
-        if (
-            target == home
-            or target in home
-        ):
-            return "home"
-
-        if (
-            target == away
-            or target in away
-        ):
-            return "away"
-
-    # Special handling for Tennessee.
-    # The NCAA endpoint commonly returns
-    # "Tennessee" rather than the full school name.
-
-    if str(
-        selected.get("id", "")
-    ).lower() == "tennessee":
-
-        if (
-            "tennessee"
-            in home
-        ):
-            return "home"
-
-        if (
-            "tennessee"
-            in away
-        ):
-            return "away"
+    if away in valid_names:
+        return "away"
 
     return None
-
 
 def get_team_schedule(
     team_id
@@ -1395,3 +1388,4 @@ def home(request: Request):
             "local_date": eastern_now().strftime("%Y-%m-%d"),
         },
     )
+
