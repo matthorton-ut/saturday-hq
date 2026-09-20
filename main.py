@@ -312,126 +312,141 @@ _team_schedule_cache = {}
 
 
 def get_team_schedule(team_id):
-    """Build a team's season schedule from NCAA weekly scoreboards.
+    """Return the complete current-season schedule for one team."""
 
-    The cache prevents opening a team page from making the same 18
-    upstream requests repeatedly.
-    """
     cache_key = str(team_id).lower()
-    cached = _team_schedule_cache.get(cache_key)
     now = datetime.now().timestamp()
 
-    if cached and now - cached["timestamp"] < 900:
+    cached = _team_schedule_cache.get(cache_key)
+    if cached and now - cached["timestamp"] < 300:
         return cached["data"]
 
     teams = get_all_teams()
+
     selected = next(
-        (team for team in teams if str(team["id"]).lower() == cache_key),
+        (
+            team
+            for team in teams
+            if str(team.get("id", "")).lower() == cache_key
+        ),
         None,
     )
 
     if not selected:
         raise ValueError("Team not found.")
 
-    target_names = {
-        selected["name"].lower(),
-        selected["short_name"].lower(),
-        selected["id"].lower(),
-    }
+    team_name = str(selected.get("name", "")).lower()
+    team_short = str(selected.get("short_name", "")).lower()
 
     games = []
 
-    # FBS regular-season weeks plus postseason weeks.
-    for week in range(1, 19):
+    # -----------------------------------------------------
+    # METHOD 1:
+    # Ask ESPN directly for the team's schedule.
+    # -----------------------------------------------------
+
+    schedule_urls = [
+        f"{BASE_URL}/teams/{team_id}/schedule",
+        f"{BASE_URL}/teams/{team_id}/schedule?season={CURRENT_SEASON}",
+    ]
+
+    for url in schedule_urls:
         try:
-            data = get_scoreboard_for_week(week)
+            response = SESSION.get(
+                url,
+                params={
+                    "season": CURRENT_SEASON,
+                    "limit": 1000,
+                },
+                timeout=20,
+            )
+
+            if response.status_code != 200:
+                continue
+
+            payload = response.json()
+
+            for raw_event in payload.get("events", []):
+                game = normalize_game(raw_event)
+
+                if not game:
+                    continue
+
+                # Make absolutely sure this game belongs to the
+                # requested team.
+                if (
+                    game["home_id"] != str(team_id)
+                    and game["away_id"] != str(team_id)
+                ):
+                    continue
+
+                games.append(_format_team_game(game, str(team_id)))
+
+            if games:
+                break
+
         except Exception:
             continue
 
-        for raw_game in data.get("games", []):
-            game = normalize_game(raw_game)
+    # -----------------------------------------------------
+    # METHOD 2:
+    # If ESPN's team schedule endpoint is empty, use the
+    # season scoreboard and filter by team ID.
+    # -----------------------------------------------------
 
-            home = game["home"].lower()
-            away = game["away"].lower()
-            home_short = home.split(" ")
-            away_short = away.split(" ")
+    if not games:
+        for week in range(1, 20):
 
-            matches_home = (
-                home in target_names
-                or selected["name"].lower() in home
-                or selected["short_name"].lower() in home
-                or selected["name"].lower() in " ".join(home_short)
-            )
-            matches_away = (
-                away in target_names
-                or selected["name"].lower() in away
-                or selected["short_name"].lower() in away
-                or selected["name"].lower() in " ".join(away_short)
-            )
-
-            if not (matches_home or matches_away):
+            try:
+                data = get_scoreboard_for_week(week)
+            except Exception:
                 continue
 
-            is_home = matches_home
-            opponent = game["away"] if is_home else game["home"]
-            opponent_id = game["away_id"] if is_home else game["home_id"]
+            for raw_game in data.get("games", []):
 
-            result = ""
-            if game["state"] == "post":
-                try:
-                    team_score = int(float(
-                        game["home_score"] if is_home else game["away_score"]
-                    ))
-                    opponent_score = int(float(
-                        game["away_score"] if is_home else game["home_score"]
-                    ))
-                    if team_score > opponent_score:
-                        result = "W"
-                    elif team_score < opponent_score:
-                        result = "L"
-                    else:
-                        result = "T"
-                except Exception:
-                    pass
+                game = normalize_game(raw_game)
 
-            games.append({
-                "id": game["id"],
-                "date": game["date_display"] or game["date"],
-                "date_raw": game["date"],
-                "status": game["status"],
-                "state": game["state"],
-                "opponent": opponent,
-                "opponent_id": opponent_id,
-                "logo": (
-                    f"{NCAA_API}/logo/{opponent_id}.svg?dark=true"
-                    if opponent_id else ""
-                ),
-                "location": "vs." if is_home else "@",
-                "detail": game["detail"],
-                "team_score": (
-                    game["home_score"] if is_home else game["away_score"]
-                ),
-                "opponent_score": (
-                    game["away_score"] if is_home else game["home_score"]
-                ),
-                "result": result,
-            })
+                if not game:
+                    continue
 
-    # Remove duplicates and sort by date.
-    unique = {}
+                if (
+                    game["home_id"] != str(team_id)
+                    and game["away_id"] != str(team_id)
+                ):
+                    continue
+
+                games.append(
+                    _format_team_game(game, str(team_id))
+                )
+
+    # -----------------------------------------------------
+    # Remove duplicate games.
+    # -----------------------------------------------------
+
+    unique_games = {}
+
     for game in games:
-        unique[game["id"]] = game
+        game_id = str(game.get("id", ""))
 
-    games = list(unique.values())
-    games.sort(key=lambda item: item.get("date_raw", ""))
+        if game_id:
+            unique_games[game_id] = game
+
+    games = list(unique_games.values())
+
+    games.sort(
+        key=lambda game: game.get("date_raw", "")
+    )
 
     result = {
         "team": {
             "id": selected["id"],
             "name": selected["name"],
-            "logo": selected["logo"],
+            "short_name": selected.get("short_name", ""),
+            "abbreviation": selected.get("abbreviation", ""),
+            "logo": selected.get("logo", ""),
         },
         "games": games,
+        "season": CURRENT_SEASON,
     }
 
     _team_schedule_cache[cache_key] = {
@@ -442,6 +457,124 @@ def get_team_schedule(team_id):
     return result
 
 
+def _format_team_game(game, team_id):
+    """Convert a normalized game into a team-schedule entry."""
+
+    team_id = str(team_id)
+
+    is_home = str(game["home_id"]) == team_id
+
+    if is_home:
+        opponent = game["away"]
+        opponent_id = game["away_id"]
+        opponent_score = game["away_score"]
+        team_score = game["home_score"]
+        opponent_logo = game.get("away_logo", "")
+    else:
+        opponent = game["home"]
+        opponent_id = game["home_id"]
+        opponent_score = game["home_score"]
+        team_score = game["away_score"]
+        opponent_logo = game.get("home_logo", "")
+
+    result = ""
+
+    if game["state"] == "post":
+
+        try:
+            team_points = int(float(team_score))
+            opponent_points = int(float(opponent_score))
+
+            if team_points > opponent_points:
+                result = "W"
+            elif team_points < opponent_points:
+                result = "L"
+            else:
+                result = "T"
+
+        except (TypeError, ValueError):
+            result = ""
+
+    status = game.get("status", "")
+
+    if game["state"] == "in":
+        status = "LIVE"
+    elif game["state"] == "post":
+        status = "FINAL"
+    elif game["state"] == "pre":
+        status = game.get("detail") or "UPCOMING"
+
+    return {
+        "id": str(game["id"]),
+
+        "date": (
+            game.get("date_display")
+            or game.get("date")
+            or ""
+        ),
+
+        "date_raw": game.get("date", ""),
+
+        "status": status,
+
+        "state": game["state"],
+
+        "opponent": opponent,
+
+        "opponent_id": str(opponent_id),
+
+        "logo": opponent_logo,
+
+        "location": "vs." if is_home else "@",
+
+        "detail": game.get("detail", ""),
+
+        "clock": game.get("clock", ""),
+
+        "period": game.get("period"),
+
+        "team_score": team_score,
+
+        "opponent_score": opponent_score,
+
+        "result": result,
+
+        # These are important for Game Center.
+        "home_id": str(game["home_id"]),
+        "away_id": str(game["away_id"]),
+        "home": game["home"],
+        "away": game["away"],
+    }
+
+
+@app.get("/api/team/{team_id}/schedule")
+def api_team_schedule(team_id: str):
+
+    try:
+        return get_team_schedule(team_id)
+
+    except Exception as exc:
+
+        return JSONResponse(
+            status_code=502,
+            content={
+                "error": str(exc),
+                "games": [],
+            },
+        )
+
+
+@app.get("/schedule/{team_id}", response_class=HTMLResponse)
+def schedule_page(request: Request, team_id: str):
+
+    return templates.TemplateResponse(
+        request=request,
+        name="schedule.html",
+        context={
+            "team_id": team_id,
+        },
+    )
+    
 @app.get("/api/team/{team_id}/schedule")
 def api_team_schedule(team_id: str):
     try:
