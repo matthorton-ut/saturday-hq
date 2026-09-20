@@ -8,7 +8,7 @@ app = FastAPI()
 
 templates = Jinja2Templates(directory="templates")
 
-BASE_URL = "https://site.api.espn.com/apis/site/v2/sports/football/college-football"
+BASE_URL = "https://site.web.api.espn.com/apis/site/v2/sports/football/college-football"
 
 SCOREBOARD_URL = f"{BASE_URL}/scoreboard"
 TEAMS_URL = f"{BASE_URL}/teams"
@@ -20,7 +20,14 @@ def espn_get(url, params=None):
         params=params,
         timeout=15,
         headers={
-            "User-Agent": "Mozilla/5.0"
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/142.0.0.0 Safari/537.36"
+            ),
+            "Accept": "application/json, text/plain, */*",
+            "Referer": "https://www.espn.com/",
+            "Origin": "https://www.espn.com",
         }
     )
     response.raise_for_status()
@@ -38,7 +45,8 @@ def get_games():
         SCOREBOARD_URL,
         {
             "dates": today,
-            "limit": 500
+            "groups": 80,
+            "limit": 100
         }
     )
 
@@ -441,7 +449,8 @@ def get_rankings():
             SCOREBOARD_URL,
             {
                 "dates": today,
-                "limit": 500
+                "groups": 80,
+                "limit": 100
             }
         )
 
