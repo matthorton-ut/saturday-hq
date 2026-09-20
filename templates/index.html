@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -772,7 +772,7 @@ footer {
 <div class="header-inner">
 
     <div class="logo">
-        🏈 Saturday <span>HQ</span>
+        ðŸˆ Saturday <span>HQ</span>
     </div>
 
     <nav class="nav">
@@ -892,7 +892,7 @@ footer {
                 >
 
                     <div class="live-game-status">
-                        ● LIVE
+                        â— LIVE
                     </div>
 
                     <div class="live-team">
@@ -982,7 +982,7 @@ footer {
                     ">
 
                         {% if game.state == "in" %}
-                            ● LIVE
+                            â— LIVE
                         {% elif game.state == "post" %}
                             FINAL
                         {% else %}
@@ -999,7 +999,7 @@ footer {
                             <span
                                 class="star"
                                 onclick="toggleFavorite(event, '{{ game.away }}')"
-                            >☆</span>
+                            >â˜†</span>
 
                             {{ game.away }}
 
@@ -1019,7 +1019,7 @@ footer {
                             <span
                                 class="star"
                                 onclick="toggleFavorite(event, '{{ game.home }}')"
-                            >☆</span>
+                            >â˜†</span>
 
                             {{ game.home }}
 
@@ -1084,7 +1084,7 @@ footer {
                     </div>
 
                     <div class="rank-record">
-                        —
+                        â€”
                     </div>
 
                 </div>
@@ -1265,7 +1265,7 @@ footer {
                 </div>
 
                 <div class="team-card-info">
-                    View schedule →
+                    View schedule â†’
                 </div>
 
             </div>
@@ -1282,7 +1282,7 @@ footer {
                 </div>
 
                 <div class="team-card-info">
-                    View schedule →
+                    View schedule â†’
                 </div>
 
             </div>
@@ -1306,7 +1306,7 @@ footer {
         class="back-button"
         onclick="showView('teams')"
     >
-        ← Back to Teams
+        â† Back to Teams
     </button>
 
 
@@ -1395,7 +1395,7 @@ footer {
                 <div class="schedule-status">
                     {% if game.state == "post" and game.team_score != "" and game.opponent_score != "" %}
                         <strong>{{ game.result }}</strong>
-                        {{ game.team_score }}–{{ game.opponent_score }}
+                        {{ game.team_score }}â€“{{ game.opponent_score }}
                     {% else %}
                         {{ game.detail }}
                     {% endif %}
@@ -1447,7 +1447,7 @@ footer {
                 No favorites yet
             </strong>
 
-            Click ☆ beside a team
+            Click â˜† beside a team
             to add it here.
 
         </div>
@@ -1463,7 +1463,7 @@ footer {
 ================================================= -->
 <section id="game-center" class="view">
     <div class="game-center-back">
-        <button type="button" onclick="closeGameCenter()">← Back</button>
+        <button type="button" onclick="closeGameCenter()">â† Back</button>
         <span id="gameCenterSubtitle" style="color:#8290a2">Game Center</span>
     </div>
 
@@ -1476,7 +1476,7 @@ footer {
 
 
 <footer>
-    Saturday HQ • College Football Command Center
+    Saturday HQ â€¢ College Football Command Center
 </footer>
 
 
@@ -1641,9 +1641,7 @@ async function openTeam(team) {
             await response.json();
 
 
-        if (!data.success ||
-            !data.schedule ||
-            data.schedule.length === 0) {
+        if (!data.schedule || data.schedule.length === 0) {
 
             container.innerHTML = `
                 <div class="empty">
@@ -1703,7 +1701,7 @@ async function openTeam(team) {
 
                 if (game.state === "in") {
 
-                    status = "● LIVE";
+                    status = "â— LIVE";
                     statusClass = "live";
 
                 }
@@ -1731,7 +1729,7 @@ async function openTeam(team) {
 
 
                 const location =
-                    game.home_away === "home"
+                    game.location === "vs."
                         ? "vs."
                         : "@";
 
@@ -1780,7 +1778,7 @@ async function openTeam(team) {
                                 "
                             >
                                 ${game.result
-                                    ? game.result + " • "
+                                    ? game.result + " â€¢ "
                                     : ""
                                 }
 
@@ -1795,7 +1793,7 @@ async function openTeam(team) {
                         <div
                             class="team-game-score"
                         >
-                            ${score || "—"}
+                            ${score || "â€”"}
                         </div>
 
                     </div>
@@ -2040,7 +2038,7 @@ function updateStars() {
 
             if (favorites.includes(team)) {
 
-                star.textContent = "★";
+                star.textContent = "â˜…";
 
                 star.classList.add(
                     "favorite"
@@ -2050,7 +2048,7 @@ function updateStars() {
 
             else {
 
-                star.textContent = "☆";
+                star.textContent = "â˜†";
 
                 star.classList.remove(
                     "favorite"
@@ -2083,7 +2081,7 @@ function renderFavorites() {
                 No favorites yet
             </strong>
 
-            Click ☆ beside a team
+            Click â˜† beside a team
             to add it here.
 
         `;
@@ -2105,11 +2103,11 @@ function renderFavorites() {
                 >
 
                     <div class="team-card-name">
-                        ★ ${escapeHtml(team)}
+                        â˜… ${escapeHtml(team)}
                     </div>
 
                     <div class="team-card-info">
-                        View schedule →
+                        View schedule â†’
                     </div>
 
                 </div>
@@ -2237,7 +2235,7 @@ function openGameCenter(gameId) {
     content.innerHTML = `
         <div class="game-center-hero">
             <div class="game-center-status ${game.state === "post" ? "final" : game.state === "pre" ? "upcoming" : ""}">
-                ${game.state === "in" ? "● LIVE" : game.state === "post" ? "FINAL" : "UPCOMING"}
+                ${game.state === "in" ? "â— LIVE" : game.state === "post" ? "FINAL" : "UPCOMING"}
             </div>
 
             <div class="game-center-teams">
@@ -2273,11 +2271,11 @@ function openGameCenter(gameId) {
                     <h3>Live Situation</h3>
                     <div id="situationGrid" class="game-situation" style="grid-template-columns:repeat(2,1fr)">
                         <div class="situation-box"><div class="situation-label">Status</div><div class="situation-value">Loading</div></div>
-                        <div class="situation-box"><div class="situation-label">Possession</div><div class="situation-value">—</div></div>
-                        <div class="situation-box"><div class="situation-label">Down</div><div class="situation-value">—</div></div>
-                        <div class="situation-box"><div class="situation-label">Distance</div><div class="situation-value">—</div></div>
-                        <div class="situation-box"><div class="situation-label">Ball</div><div class="situation-value">—</div></div>
-                        <div class="situation-box"><div class="situation-label">Clock</div><div class="situation-value">—</div></div>
+                        <div class="situation-box"><div class="situation-label">Possession</div><div class="situation-value">â€”</div></div>
+                        <div class="situation-box"><div class="situation-label">Down</div><div class="situation-value">â€”</div></div>
+                        <div class="situation-box"><div class="situation-label">Distance</div><div class="situation-value">â€”</div></div>
+                        <div class="situation-box"><div class="situation-label">Ball</div><div class="situation-value">â€”</div></div>
+                        <div class="situation-box"><div class="situation-label">Clock</div><div class="situation-value">â€”</div></div>
                     </div>
                 </div>
 
@@ -2323,11 +2321,11 @@ async function loadGameCenter(game) {
 
         situation.innerHTML = `
             <div class="situation-box"><div class="situation-label">Status</div><div class="situation-value">${game.state === "in" ? "LIVE" : game.state === "post" ? "FINAL" : "UPCOMING"}</div></div>
-            <div class="situation-box"><div class="situation-label">Possession</div><div class="situation-value">—</div></div>
-            <div class="situation-box"><div class="situation-label">Down</div><div class="situation-value">—</div></div>
-            <div class="situation-box"><div class="situation-label">Distance</div><div class="situation-value">—</div></div>
-            <div class="situation-box"><div class="situation-label">Ball</div><div class="situation-value">—</div></div>
-            <div class="situation-box"><div class="situation-label">Clock</div><div class="situation-value">${escapeHtml(game.detail || "—")}</div></div>
+            <div class="situation-box"><div class="situation-label">Possession</div><div class="situation-value">â€”</div></div>
+            <div class="situation-box"><div class="situation-label">Down</div><div class="situation-value">â€”</div></div>
+            <div class="situation-box"><div class="situation-label">Distance</div><div class="situation-value">â€”</div></div>
+            <div class="situation-box"><div class="situation-label">Ball</div><div class="situation-value">â€”</div></div>
+            <div class="situation-box"><div class="situation-label">Clock</div><div class="situation-value">${escapeHtml(game.detail || "â€”")}</div></div>
         `;
 
         lastPlay.innerHTML = `
@@ -2358,26 +2356,26 @@ function renderGameCenter(data, game) {
         : null;
 
     const possessionName = possessionTeam?.team?.abbreviation ||
-        possessionTeam?.team?.shortDisplayName || "—";
+        possessionTeam?.team?.shortDisplayName || "â€”";
 
     const down = situationData.down != null
         ? `${situationData.down + 1}th`
-        : "—";
+        : "â€”";
 
     const distance = situationData.distance != null
         ? String(situationData.distance)
-        : "—";
+        : "â€”";
 
     const yardLine = situationData.yardLine != null
         ? String(situationData.yardLine)
-        : "—";
+        : "â€”";
 
-    const clock = status.displayClock || "—";
+    const clock = status.displayClock || "â€”";
 
     situation.innerHTML = `
         <div class="situation-box">
             <div class="situation-label">Status</div>
-            <div class="situation-value">${escapeHtml(type.shortDetail || type.description || "—")}</div>
+            <div class="situation-value">${escapeHtml(type.shortDetail || type.description || "â€”")}</div>
         </div>
         <div class="situation-box">
             <div class="situation-label">Possession</div>
