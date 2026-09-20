@@ -1,0 +1,2627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saturday HQ — College Football</title>
+
+    <style>
+        :root {
+            --bg: #050a11;
+            --panel: #0d151f;
+            --panel2: #111c27;
+            --panel3: #162330;
+            --border: #223242;
+            --border-light: #2b3d50;
+            --text: #f4f7fb;
+            --muted: #8ea3ba;
+            --muted2: #6f849b;
+            --green: #57e389;
+            --green-dark: #1b5c39;
+            --blue: #55a7ff;
+            --red: #ff6565;
+            --yellow: #f5c451;
+            --shadow: 0 15px 40px rgba(0,0,0,.22);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            background:
+                radial-gradient(circle at top right, rgba(37,72,110,.15), transparent 35%),
+                var(--bg);
+            color: var(--text);
+            font-family:
+                Inter,
+                ui-sans-serif,
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+            min-height: 100vh;
+        }
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        /* =========================================================
+           HEADER
+        ========================================================= */
+
+        .topbar {
+            height: 74px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            background: rgba(13,21,31,.96);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(14px);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 30px;
+            font-weight: 850;
+            letter-spacing: -.8px;
+            white-space: nowrap;
+        }
+
+        .football {
+            width: 34px;
+            height: 34px;
+            display: grid;
+            place-items: center;
+            font-size: 23px;
+        }
+
+        .hq {
+            color: var(--green);
+        }
+
+        .nav {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-btn {
+            border: 0;
+            background: transparent;
+            color: var(--muted);
+            padding: 12px 18px;
+            border-radius: 12px;
+            transition: .2s ease;
+            font-weight: 600;
+        }
+
+        .nav-btn:hover {
+            background: var(--panel2);
+            color: var(--text);
+        }
+
+        .nav-btn.active {
+            background: var(--panel3);
+            color: white;
+        }
+
+        /* =========================================================
+           MAIN
+        ========================================================= */
+
+        .container {
+            width: min(1500px, calc(100% - 40px));
+            margin: 0 auto;
+            padding: 34px 0 70px;
+        }
+
+        .page-title-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+
+        .page-title {
+            font-size: 38px;
+            margin: 0;
+            letter-spacing: -1px;
+        }
+
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            color: var(--green);
+            font-weight: 800;
+        }
+
+        .live-dot {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 14px rgba(87,227,137,.8);
+        }
+
+        /* =========================================================
+           STATS
+        ========================================================= */
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .stat {
+            background: linear-gradient(145deg, var(--panel), #0b121b);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            min-height: 120px;
+            box-shadow: var(--shadow);
+        }
+
+        .stat-label {
+            color: var(--muted);
+            text-transform: uppercase;
+            font-size: 13px;
+            letter-spacing: .5px;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 850;
+        }
+
+        .stat.live .stat-value {
+            color: var(--green);
+        }
+
+        /* =========================================================
+           LAYOUT
+        ========================================================= */
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 360px;
+            gap: 24px;
+            align-items: start;
+        }
+
+        .panel {
+            background: rgba(13,21,31,.94);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .panel-header {
+            padding: 22px 26px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .panel-title {
+            font-size: 21px;
+            font-weight: 800;
+        }
+
+        .panel-subtitle {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        /* =========================================================
+           SEARCH
+        ========================================================= */
+
+        .search-wrap {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .search-box {
+            width: 100%;
+            border: 1px solid var(--border-light);
+            background: #0b131d;
+            color: white;
+            padding: 15px 17px;
+            border-radius: 12px;
+            outline: none;
+            transition: .2s ease;
+        }
+
+        .search-box:focus {
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(85,167,255,.12);
+        }
+
+        .search-box::placeholder {
+            color: #647990;
+        }
+
+        .search-results {
+            margin-top: 8px;
+            display: none;
+            background: #0c141e;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            z-index: 20;
+        }
+
+        .search-result {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+        }
+
+        .search-result:last-child {
+            border-bottom: 0;
+        }
+
+        .search-result:hover {
+            background: var(--panel3);
+        }
+
+        .team-result-name {
+            font-weight: 700;
+        }
+
+        .team-result-meta {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        /* =========================================================
+           GAME GRID
+        ========================================================= */
+
+        .games-grid {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .game-card {
+            background: var(--panel2);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 20px;
+            transition: .2s ease;
+        }
+
+        .game-card:hover {
+            border-color: var(--border-light);
+            transform: translateY(-1px);
+        }
+
+        .game-status {
+            font-size: 13px;
+            font-weight: 850;
+            margin-bottom: 20px;
+            color: var(--muted);
+            text-transform: uppercase;
+        }
+
+        .game-status.live {
+            color: var(--green);
+        }
+
+        .game-status.half {
+            color: var(--blue);
+        }
+
+        .game-status.final {
+            color: #9aabba;
+        }
+
+        .team-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            margin: 13px 0;
+        }
+
+        .team-name {
+            font-size: 18px;
+            font-weight: 550;
+        }
+
+        .team-score {
+            font-size: 27px;
+            font-weight: 850;
+            min-width: 40px;
+            text-align: right;
+        }
+
+        .game-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 20px 0 13px;
+        }
+
+        .game-detail {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        /* =========================================================
+           RANKINGS
+        ========================================================= */
+
+        .ranking-list {
+            padding: 12px 22px 20px;
+        }
+
+        .ranking-row {
+            display: grid;
+            grid-template-columns: 42px 1fr auto;
+            align-items: center;
+            gap: 10px;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .ranking-row:last-child {
+            border-bottom: 0;
+        }
+
+        .rank-number {
+            color: var(--muted);
+            font-weight: 800;
+        }
+
+        .rank-team {
+            font-weight: 650;
+        }
+
+        .rank-record {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .rank-change {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .ranking-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 22px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .ranking-header h2 {
+            margin: 0;
+            font-size: 22px;
+        }
+
+        .top25-badge {
+            color: var(--green);
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        /* =========================================================
+           SIDEBAR
+        ========================================================= */
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .info-card {
+            padding: 24px;
+        }
+
+        .info-card h3 {
+            margin: 0 0 14px;
+            font-size: 21px;
+        }
+
+        .info-card p {
+            margin: 0;
+            line-height: 1.7;
+            color: var(--muted);
+        }
+
+        /* =========================================================
+           TEAM PAGE
+        ========================================================= */
+
+        .team-page {
+            display: none;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--panel2);
+            border: 1px solid var(--border-light);
+            color: white;
+            padding: 12px 18px;
+            border-radius: 12px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .back-btn:hover {
+            background: var(--panel3);
+        }
+
+        .team-hero {
+            background: linear-gradient(145deg, #0e1721, #0a1119);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .team-hero-main {
+            padding: 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 25px;
+        }
+
+        .team-heading {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .team-logo {
+            width: 74px;
+            height: 74px;
+            border-radius: 18px;
+            background: #162330;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .team-logo img {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+        }
+
+        .team-heading h1 {
+            margin: 0 0 7px;
+            font-size: 34px;
+        }
+
+        .team-heading p {
+            margin: 0;
+            color: var(--muted);
+        }
+
+        .favorite-btn {
+            border: 1px solid var(--border-light);
+            background: var(--panel2);
+            color: white;
+            padding: 13px 18px;
+            border-radius: 12px;
+            font-weight: 750;
+        }
+
+        .favorite-btn:hover {
+            background: var(--panel3);
+        }
+
+        .favorite-btn.favorited {
+            color: var(--green);
+            border-color: rgba(87,227,137,.4);
+        }
+
+        .team-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            border-top: 1px solid var(--border);
+        }
+
+        .team-stat {
+            padding: 20px 28px;
+            border-right: 1px solid var(--border);
+        }
+
+        .team-stat:last-child {
+            border-right: 0;
+        }
+
+        .team-stat-label {
+            color: var(--muted);
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 7px;
+        }
+
+        .team-stat-value {
+            font-size: 24px;
+            font-weight: 850;
+        }
+
+        /* =========================================================
+           SCHEDULE
+        ========================================================= */
+
+        .schedule-panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            overflow: hidden;
+        }
+
+        .schedule-row {
+            display: grid;
+            grid-template-columns: 115px minmax(0,1fr) 130px;
+            gap: 20px;
+            align-items: center;
+            padding: 22px 26px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .schedule-row:last-child {
+            border-bottom: 0;
+        }
+
+        .schedule-date {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .schedule-date strong {
+            display: block;
+            color: white;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+
+        .opponent {
+            font-size: 17px;
+            font-weight: 750;
+        }
+
+        .opponent-meta {
+            margin-top: 5px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .schedule-result {
+            text-align: right;
+            font-weight: 800;
+        }
+
+        .result-win {
+            color: var(--green);
+        }
+
+        .result-loss {
+            color: var(--red);
+        }
+
+        .result-live {
+            color: var(--green);
+        }
+
+        .result-upcoming {
+            color: var(--muted);
+        }
+
+        /* =========================================================
+           FAVORITES
+        ========================================================= */
+
+        .favorite-grid {
+            padding: 22px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .favorite-card {
+            background: var(--panel2);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .favorite-card:hover {
+            border-color: var(--border-light);
+            background: var(--panel3);
+        }
+
+        .favorite-name {
+            font-weight: 800;
+            font-size: 18px;
+        }
+
+        .favorite-remove {
+            color: var(--muted);
+            border: 0;
+            background: transparent;
+            font-size: 20px;
+        }
+
+        /* =========================================================
+           EMPTY / ERROR
+        ========================================================= */
+
+        .empty {
+            padding: 60px 25px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        .empty h3 {
+            color: #a9bbcd;
+            margin: 0 0 10px;
+            font-size: 20px;
+        }
+
+        .error {
+            padding: 35px;
+            text-align: center;
+            color: var(--red);
+            line-height: 1.6;
+        }
+
+        .loading {
+            padding: 50px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        /* =========================================================
+           FOOTER
+        ========================================================= */
+
+        footer {
+            text-align: center;
+            padding: 35px 20px;
+            color: #526b83;
+            font-size: 13px;
+        }
+
+        /* =========================================================
+           MOBILE
+        ========================================================= */
+
+        @media (max-width: 1100px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 760px) {
+            .topbar {
+                height: auto;
+                min-height: 70px;
+                padding: 12px 15px;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .brand {
+                font-size: 25px;
+            }
+
+            .nav {
+                width: 100%;
+                overflow-x: auto;
+                justify-content: flex-start;
+            }
+
+            .nav-btn {
+                white-space: nowrap;
+                padding: 10px 13px;
+            }
+
+            .container {
+                width: min(100% - 20px, 1500px);
+                padding-top: 22px;
+            }
+
+            .page-title {
+                font-size: 30px;
+            }
+
+            .stats {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .games-grid {
+                grid-template-columns: 1fr;
+                padding: 12px;
+            }
+
+            .sidebar {
+                display: flex;
+            }
+
+            .team-hero-main {
+                padding: 22px;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .team-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .team-stat {
+                border-right: 0;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .schedule-row {
+                grid-template-columns: 80px minmax(0,1fr);
+                gap: 12px;
+            }
+
+            .schedule-result {
+                grid-column: 2;
+                text-align: left;
+            }
+
+            .favorite-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 500px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .page-title-row {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .team-heading h1 {
+                font-size: 27px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="topbar">
+    <div class="brand">
+        <span class="football">🏈</span>
+        <span>Saturday <span class="hq">HQ</span></span>
+    </div>
+
+    <nav class="nav">
+        <button class="nav-btn active" data-page="scores">Scores</button>
+        <button class="nav-btn" data-page="rankings">Rankings</button>
+        <button class="nav-btn" data-page="teams">Teams</button>
+        <button class="nav-btn" data-page="schedule">Schedule</button>
+        <button class="nav-btn" data-page="favorites">Favorites</button>
+    </nav>
+</header>
+
+<main class="container">
+
+    <!-- =========================================================
+         SCORES PAGE
+    ========================================================= -->
+
+    <section id="scoresPage" class="page">
+
+        <div class="page-title-row">
+            <h1 class="page-title">College Football</h1>
+
+            <div class="live-indicator">
+                <span class="live-dot"></span>
+                LIVE DATA
+            </div>
+        </div>
+
+        <div class="stats">
+
+            <div class="stat">
+                <div class="stat-label">Games Today</div>
+                <div class="stat-value" id="gamesCount">
+                    {{ games|length }}
+                </div>
+            </div>
+
+            <div class="stat live">
+                <div class="stat-label">Live</div>
+                <div class="stat-value" id="liveCount">
+                    {{ live_games }}
+                </div>
+            </div>
+
+            <div class="stat">
+                <div class="stat-label">Final</div>
+                <div class="stat-value" id="finalCount">
+                    {{ final_games }}
+                </div>
+            </div>
+
+            <div class="stat">
+                <div class="stat-label">Updated</div>
+                <div class="stat-value" id="updatedTime">
+                    Now
+                </div>
+            </div>
+
+        </div>
+
+        <div class="dashboard">
+
+            <div class="panel">
+
+                <div class="panel-header">
+                    <div class="panel-title">Today's Games</div>
+                    <div class="panel-subtitle">Auto-refresh: 30s</div>
+                </div>
+
+                <div class="search-wrap">
+                    <input
+                        id="teamSearch"
+                        class="search-box"
+                        type="text"
+                        placeholder="Search teams..."
+                        autocomplete="off"
+                    >
+
+                    <div id="searchResults" class="search-results"></div>
+                </div>
+
+                <div id="gamesContainer">
+
+                    {% if error %}
+
+                        <div class="error">
+                            {{ error }}
+                        </div>
+
+                    {% elif games %}
+
+                        <div class="games-grid">
+
+                            {% for game in games %}
+
+                                <div class="game-card">
+
+                                    <div class="game-status
+                                        {% if game.state == 'in' %}
+                                            live
+                                        {% elif game.state == 'post' %}
+                                            final
+                                        {% endif %}
+                                    ">
+
+                                        {% if game.state == 'in' %}
+                                            LIVE
+                                        {% elif game.state == 'post' %}
+                                            FINAL
+                                        {% else %}
+                                            {{ game.status }}
+                                        {% endif %}
+
+                                    </div>
+
+                                    <div class="team-row">
+                                        <div class="team-name">
+                                            {{ game.away }}
+                                        </div>
+
+                                        <div class="team-score">
+                                            {{ game.away_score }}
+                                        </div>
+                                    </div>
+
+                                    <div class="team-row">
+                                        <div class="team-name">
+                                            {{ game.home }}
+                                        </div>
+
+                                        <div class="team-score">
+                                            {{ game.home_score }}
+                                        </div>
+                                    </div>
+
+                                    <div class="game-divider"></div>
+
+                                    <div class="game-detail">
+                                        {{ game.detail or game.status }}
+                                    </div>
+
+                                </div>
+
+                            {% endfor %}
+
+                        </div>
+
+                    {% else %}
+
+                        <div class="empty">
+                            <h3>No games found</h3>
+                            <p>There are no games in the current feed.</p>
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+            <aside class="sidebar">
+
+                <div class="panel">
+
+                    <div class="ranking-header">
+                        <h2>Top 25</h2>
+                        <span class="top25-badge">AP POLL</span>
+                    </div>
+
+                    <div id="sidebarRankings" class="ranking-list">
+
+                        <div class="loading">
+                            Loading rankings...
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="panel info-card">
+
+                    <h3>Saturday HQ</h3>
+
+                    <p>
+                        Your college football command center.
+                        Live scores, rankings, schedules, team
+                        information and favorites.
+                    </p>
+
+                </div>
+
+            </aside>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================================================
+         RANKINGS PAGE
+    ========================================================= -->
+
+    <section id="rankingsPage" class="page" style="display:none;">
+
+        <div class="page-title-row">
+            <h1 class="page-title">College Football Top 25</h1>
+
+            <div class="live-indicator">
+                <span class="live-dot"></span>
+                AP POLL
+            </div>
+        </div>
+
+        <div class="panel">
+
+            <div class="ranking-header">
+                <h2>Top 25 Rankings</h2>
+                <span class="top25-badge">TOP 25</span>
+            </div>
+
+            <div id="fullRankings" class="ranking-list">
+
+                <div class="loading">
+                    Loading rankings...
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================================================
+         TEAMS PAGE
+    ========================================================= -->
+
+    <section id="teamsPage" class="page" style="display:none;">
+
+        <div class="page-title-row">
+            <h1 class="page-title">Teams</h1>
+
+            <div class="live-indicator">
+                <span class="live-dot"></span>
+                TEAM DATABASE
+            </div>
+        </div>
+
+        <div class="panel">
+
+            <div class="panel-header">
+                <div>
+                    <div class="panel-title">Find a Team</div>
+                    <div class="panel-subtitle">
+                        Search for any college football team
+                    </div>
+                </div>
+            </div>
+
+            <div class="search-wrap">
+
+                <input
+                    id="teamsSearch"
+                    class="search-box"
+                    type="text"
+                    placeholder="Search Alabama, Tennessee, Ohio State..."
+                    autocomplete="off"
+                >
+
+                <div id="teamsSearchResults" class="search-results"></div>
+
+            </div>
+
+            <div id="teamsList" class="favorite-grid">
+
+                <div class="loading">
+                    Loading teams...
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================================================
+         SCHEDULE PAGE
+    ========================================================= -->
+
+    <section id="schedulePage" class="page" style="display:none;">
+
+        <div class="page-title-row">
+            <h1 class="page-title">Team Schedule</h1>
+
+            <div class="live-indicator">
+                <span class="live-dot"></span>
+                2026 SEASON
+            </div>
+        </div>
+
+        <div id="scheduleContent">
+
+            <div class="empty">
+                <h3>Select a team</h3>
+                <p>
+                    Search for a team and click it to view the complete schedule.
+                </p>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================================================
+         FAVORITES PAGE
+    ========================================================= -->
+
+    <section id="favoritesPage" class="page" style="display:none;">
+
+        <div class="page-title-row">
+            <h1 class="page-title">Favorite Teams</h1>
+
+            <div class="live-indicator">
+                <span class="live-dot"></span>
+                YOUR TEAMS
+            </div>
+        </div>
+
+        <div class="panel">
+
+            <div class="panel-header">
+                <div>
+                    <div class="panel-title">Favorites</div>
+                    <div class="panel-subtitle">
+                        Your saved teams
+                    </div>
+                </div>
+            </div>
+
+            <div id="favoritesContainer">
+
+                <div class="empty">
+                    <h3>No favorite teams yet</h3>
+                    <p>
+                        Open a team and press the ☆ Favorite button.
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================================================
+         TEAM DETAIL PAGE
+    ========================================================= -->
+
+    <section id="teamPage" class="team-page">
+
+        <button class="back-btn" onclick="showPage('teams')">
+            ← Back to Teams
+        </button>
+
+        <div id="teamDetail"></div>
+
+    </section>
+
+</main>
+
+<footer>
+    Saturday HQ • College Football Command Center
+</footer>
+
+
+<script>
+/* =============================================================
+   GLOBAL STATE
+============================================================= */
+
+let allTeams = [];
+let rankings = [];
+let currentTeam = null;
+
+const favoriteStorageKey = "saturdayHQFavorites";
+
+
+/* =============================================================
+   SAFE JSON HELPER
+============================================================= */
+
+function safeJson(value) {
+
+    if (value === null || value === undefined) {
+        return null;
+    }
+
+    if (typeof value === "string") {
+        return value;
+    }
+
+    if (typeof value === "object") {
+
+        if (value.displayValue !== undefined) {
+            return value.displayValue;
+        }
+
+        if (value.value !== undefined) {
+            return value.value;
+        }
+
+        return "";
+    }
+
+    return value;
+}
+
+
+/* =============================================================
+   FAVORITES
+============================================================= */
+
+function getFavorites() {
+
+    try {
+
+        const saved = localStorage.getItem(favoriteStorageKey);
+
+        if (!saved) {
+            return [];
+        }
+
+        const parsed = JSON.parse(saved);
+
+        return Array.isArray(parsed) ? parsed : [];
+
+    } catch (error) {
+
+        console.error("Favorite loading error:", error);
+
+        return [];
+    }
+}
+
+
+function saveFavorites(favorites) {
+
+    localStorage.setItem(
+        favoriteStorageKey,
+        JSON.stringify(favorites)
+    );
+
+    renderFavorites();
+}
+
+
+function isFavorite(teamId) {
+
+    return getFavorites().some(
+        team => String(team.id) === String(teamId)
+    );
+}
+
+
+function toggleFavorite(team) {
+
+    let favorites = getFavorites();
+
+    const existingIndex = favorites.findIndex(
+        item => String(item.id) === String(team.id)
+    );
+
+    if (existingIndex >= 0) {
+
+        favorites.splice(existingIndex, 1);
+
+    } else {
+
+        favorites.push({
+            id: team.id,
+            name: team.name,
+            abbreviation: team.abbreviation || "",
+            logo: team.logo || ""
+        });
+
+    }
+
+    saveFavorites(favorites);
+
+    updateFavoriteButton(team);
+}
+
+
+function updateFavoriteButton(team) {
+
+    const button = document.getElementById("favoriteButton");
+
+    if (!button) {
+        return;
+    }
+
+    if (isFavorite(team.id)) {
+
+        button.classList.add("favorited");
+        button.innerHTML = "★ Favorited";
+
+    } else {
+
+        button.classList.remove("favorited");
+        button.innerHTML = "☆ Favorite";
+
+    }
+}
+
+
+/* =============================================================
+   NAVIGATION
+============================================================= */
+
+function hideAllPages() {
+
+    document.querySelectorAll(".page").forEach(page => {
+        page.style.display = "none";
+    });
+
+    document.getElementById("teamPage").style.display = "none";
+}
+
+
+function showPage(page) {
+
+    hideAllPages();
+
+    const target = document.getElementById(page + "Page");
+
+    if (target) {
+        target.style.display = "block";
+    }
+
+    document.querySelectorAll(".nav-btn").forEach(button => {
+
+        button.classList.toggle(
+            "active",
+            button.dataset.page === page
+        );
+
+    });
+
+    if (page === "rankings") {
+        loadRankings();
+    }
+
+    if (page === "teams") {
+        loadTeams();
+    }
+
+    if (page === "favorites") {
+        renderFavorites();
+    }
+}
+
+
+document.querySelectorAll(".nav-btn").forEach(button => {
+
+    button.addEventListener("click", () => {
+
+        showPage(button.dataset.page);
+
+    });
+
+});
+
+
+/* =============================================================
+   LOAD RANKINGS
+============================================================= */
+
+async function loadRankings() {
+
+    const sidebar = document.getElementById("sidebarRankings");
+    const full = document.getElementById("fullRankings");
+
+    try {
+
+        const response = await fetch("/api/rankings");
+
+        if (!response.ok) {
+            throw new Error("Rankings request failed");
+        }
+
+        const data = await response.json();
+
+        rankings =
+            data.rankings ||
+            data.results ||
+            data ||
+            [];
+
+        if (!Array.isArray(rankings)) {
+            rankings = [];
+        }
+
+        rankings = rankings
+            .map((team, index) => {
+
+                return {
+                    rank:
+                        team.rank ??
+                        team.current ??
+                        team.ranking ??
+                        index + 1,
+
+                    name:
+                        team.name ??
+                        team.team?.displayName ??
+                        team.team?.name ??
+                        "Unknown",
+
+                    record:
+                        team.record ??
+                        team.team?.record ??
+                        "",
+
+                    logo:
+                        team.logo ??
+                        team.team?.logos?.[0]?.href ??
+                        ""
+                };
+
+            })
+            .slice(0, 25);
+
+        renderRankings(sidebar, 5);
+        renderRankings(full, 25);
+
+    } catch (error) {
+
+        console.error(error);
+
+        const message = `
+            <div class="error">
+                Could not load rankings.<br>
+                <small>${escapeHtml(error.message)}</small>
+            </div>
+        `;
+
+        sidebar.innerHTML = message;
+        full.innerHTML = message;
+    }
+}
+
+
+function renderRankings(container, limit) {
+
+    if (!container) {
+        return;
+    }
+
+    const list = rankings.slice(0, limit);
+
+    if (!list.length) {
+
+        container.innerHTML = `
+            <div class="empty">
+                <h3>No rankings available</h3>
+                <p>Ranking data was not returned by the server.</p>
+            </div>
+        `;
+
+        return;
+    }
+
+    container.innerHTML = list.map(team => `
+
+        <div class="ranking-row"
+             onclick="openTeamByName('${escapeAttribute(team.name)}')"
+             style="cursor:pointer;">
+
+            <div class="rank-number">
+                ${team.rank}
+            </div>
+
+            <div>
+                <div class="rank-team">
+                    ${escapeHtml(team.name)}
+                </div>
+
+                ${
+                    team.record
+                    ? `<div class="rank-record">
+                        ${escapeHtml(String(team.record))}
+                       </div>`
+                    : ""
+                }
+            </div>
+
+            <div class="rank-change">
+                —
+            </div>
+
+        </div>
+
+    `).join("");
+}
+
+
+/* =============================================================
+   LOAD TEAMS
+============================================================= */
+
+async function loadTeams() {
+
+    const container = document.getElementById("teamsList");
+
+    if (!container) {
+        return;
+    }
+
+    try {
+
+        const response = await fetch("/api/teams");
+
+        if (!response.ok) {
+            throw new Error("Teams request failed");
+        }
+
+        const data = await response.json();
+
+        allTeams =
+            data.teams ||
+            data.results ||
+            data ||
+            [];
+
+        if (!Array.isArray(allTeams)) {
+            allTeams = [];
+        }
+
+        renderTeams(allTeams);
+
+    } catch (error) {
+
+        console.error(error);
+
+        container.innerHTML = `
+            <div class="error">
+                Could not load teams.<br>
+                <small>${escapeHtml(error.message)}</small>
+            </div>
+        `;
+    }
+}
+
+
+function renderTeams(teams) {
+
+    const container = document.getElementById("teamsList");
+
+    if (!container) {
+        return;
+    }
+
+    if (!teams.length) {
+
+        container.innerHTML = `
+            <div class="empty">
+                <h3>No teams found</h3>
+            </div>
+        `;
+
+        return;
+    }
+
+    container.innerHTML = teams
+        .slice(0, 100)
+        .map(team => `
+
+            <div class="favorite-card"
+                 onclick="openTeam(${JSON.stringify(team).replace(/"/g, '&quot;')})">
+
+                <div>
+
+                    <div class="favorite-name">
+                        ${escapeHtml(team.name || "Unknown")}
+                    </div>
+
+                    <div class="team-result-meta">
+                        ${escapeHtml(team.abbreviation || "")}
+                    </div>
+
+                </div>
+
+                <div>
+                    →
+                </div>
+
+            </div>
+
+        `)
+        .join("");
+}
+
+
+/* =============================================================
+   TEAM SEARCH
+============================================================= */
+
+const teamSearch = document.getElementById("teamSearch");
+
+if (teamSearch) {
+
+    teamSearch.addEventListener("input", async event => {
+
+        const query = event.target.value.trim().toLowerCase();
+
+        const results = document.getElementById("searchResults");
+
+        if (!query) {
+
+            results.style.display = "none";
+            results.innerHTML = "";
+
+            return;
+        }
+
+        let sourceTeams = allTeams;
+
+        if (!sourceTeams.length) {
+
+            try {
+
+                const response = await fetch("/api/teams");
+
+                if (response.ok) {
+
+                    const data = await response.json();
+
+                    sourceTeams =
+                        data.teams ||
+                        data.results ||
+                        data ||
+                        [];
+
+                    if (Array.isArray(sourceTeams)) {
+                        allTeams = sourceTeams;
+                    }
+
+                }
+
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        const matches = sourceTeams
+            .filter(team => {
+
+                const name = String(team.name || "").toLowerCase();
+                const abbr = String(team.abbreviation || "").toLowerCase();
+
+                return (
+                    name.includes(query) ||
+                    abbr.includes(query)
+                );
+
+            })
+            .slice(0, 12);
+
+        renderSearchResults(results, matches);
+    });
+}
+
+
+/* =============================================================
+   TEAMS PAGE SEARCH
+============================================================= */
+
+const teamsSearch = document.getElementById("teamsSearch");
+
+if (teamsSearch) {
+
+    teamsSearch.addEventListener("input", event => {
+
+        const query = event.target.value.trim().toLowerCase();
+
+        const results =
+            document.getElementById("teamsSearchResults");
+
+        if (!query) {
+
+            results.style.display = "none";
+            results.innerHTML = "";
+
+            return;
+        }
+
+        const matches = allTeams
+            .filter(team => {
+
+                const name =
+                    String(team.name || "").toLowerCase();
+
+                const abbreviation =
+                    String(team.abbreviation || "").toLowerCase();
+
+                return (
+                    name.includes(query) ||
+                    abbreviation.includes(query)
+                );
+
+            })
+            .slice(0, 15);
+
+        renderSearchResults(results, matches);
+    });
+}
+
+
+function renderSearchResults(container, matches) {
+
+    if (!matches.length) {
+
+        container.innerHTML = `
+            <div class="search-result">
+                <div>
+                    <div class="team-result-name">
+                        No teams found
+                    </div>
+                </div>
+            </div>
+        `;
+
+        container.style.display = "block";
+
+        return;
+    }
+
+    container.innerHTML = matches.map(team => `
+
+        <div class="search-result"
+             onclick='openTeam(${JSON.stringify(team)})'>
+
+            <div>
+
+                <div class="team-result-name">
+                    ${escapeHtml(team.name || "Unknown")}
+                </div>
+
+                <div class="team-result-meta">
+                    ${escapeHtml(team.abbreviation || "")}
+                </div>
+
+            </div>
+
+            <div>
+                →
+            </div>
+
+        </div>
+
+    `).join("");
+
+    container.style.display = "block";
+}
+
+
+/* =============================================================
+   OPEN TEAM
+============================================================= */
+
+async function openTeam(team) {
+
+    if (!team) {
+        return;
+    }
+
+    currentTeam = team;
+
+    document.querySelectorAll(".nav-btn").forEach(button => {
+        button.classList.remove("active");
+    });
+
+    hideAllPages();
+
+    const teamPage = document.getElementById("teamPage");
+
+    teamPage.style.display = "block";
+
+    const detail = document.getElementById("teamDetail");
+
+    detail.innerHTML = `
+        <div class="loading">
+            Loading ${escapeHtml(team.name || "team")}...
+        </div>
+    `;
+
+    try {
+
+        const schedule = await fetchTeamSchedule(team);
+
+        renderTeamPage(team, schedule);
+
+    } catch (error) {
+
+        console.error(error);
+
+        detail.innerHTML = `
+
+            <button class="back-btn"
+                    onclick="showPage('teams')">
+                ← Back to Teams
+            </button>
+
+            <div class="team-hero">
+
+                <div class="team-hero-main">
+
+                    <div class="team-heading">
+
+                        <div class="team-logo">
+
+                            ${
+                                team.logo
+                                ? `<img src="${escapeAttribute(team.logo)}"
+                                        alt="">`
+                                : "🏈"
+                            }
+
+                        </div>
+
+                        <div>
+
+                            <h1>
+                                ${escapeHtml(team.name || "Unknown")}
+                            </h1>
+
+                            <p>
+                                Team Schedule
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <button
+                        id="favoriteButton"
+                        class="favorite-btn"
+                        onclick="toggleFavorite(currentTeam)">
+                        ☆ Favorite
+                    </button>
+
+                </div>
+
+            </div>
+
+            <div class="panel">
+
+                <div class="error">
+
+                    <h3>
+                        Couldn't load ${escapeHtml(team.name || "team")}.
+                    </h3>
+
+                    <p>
+                        ${escapeHtml(error.message)}
+                    </p>
+
+                </div>
+
+            </div>
+        `;
+
+        updateFavoriteButton(team);
+    }
+}
+
+
+/* =============================================================
+   TEAM SCHEDULE
+============================================================= */
+
+async function fetchTeamSchedule(team) {
+
+    const teamId =
+        team.id ||
+        team.teamId ||
+        team.team_id;
+
+    if (!teamId) {
+        throw new Error("Team ID was not provided.");
+    }
+
+    const response = await fetch(
+        `/api/team/${encodeURIComponent(teamId)}/schedule`
+    );
+
+    if (!response.ok) {
+
+        throw new Error(
+            `Schedule request failed (${response.status})`
+        );
+    }
+
+    const data = await response.json();
+
+    return (
+        data.games ||
+        data.schedule ||
+        data.events ||
+        []
+    );
+}
+
+
+/* =============================================================
+   RENDER TEAM PAGE
+============================================================= */
+
+function renderTeamPage(team, schedule) {
+
+    const detail = document.getElementById("teamDetail");
+
+    const games = Array.isArray(schedule)
+        ? schedule
+        : [];
+
+    let wins = 0;
+    let losses = 0;
+
+    games.forEach(game => {
+
+        const result = String(
+            game.result ||
+            game.outcome ||
+            ""
+        ).toLowerCase();
+
+        if (result === "w" || result === "win") {
+            wins++;
+        }
+
+        if (result === "l" || result === "loss") {
+            losses++;
+        }
+    });
+
+    detail.innerHTML = `
+
+        <button class="back-btn"
+                onclick="showPage('teams')">
+            ← Back to Teams
+        </button>
+
+        <div class="team-hero">
+
+            <div class="team-hero-main">
+
+                <div class="team-heading">
+
+                    <div class="team-logo">
+
+                        ${
+                            team.logo
+                            ? `<img src="${escapeAttribute(team.logo)}"
+                                    alt="">`
+                            : "🏈"
+                        }
+
+                    </div>
+
+                    <div>
+
+                        <h1>
+                            ${escapeHtml(team.name || "Unknown")}
+                        </h1>
+
+                        <p>
+                            ${escapeHtml(team.abbreviation || "")}
+                            • 2026 Season
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <button
+                    id="favoriteButton"
+                    class="favorite-btn"
+                    onclick="toggleFavorite(currentTeam)">
+                    ☆ Favorite
+                </button>
+
+            </div>
+
+            <div class="team-stats">
+
+                <div class="team-stat">
+
+                    <div class="team-stat-label">
+                        Record
+                    </div>
+
+                    <div class="team-stat-value">
+                        ${wins}-${losses}
+                    </div>
+
+                </div>
+
+                <div class="team-stat">
+
+                    <div class="team-stat-label">
+                        Games
+                    </div>
+
+                    <div class="team-stat-value">
+                        ${games.length}
+                    </div>
+
+                </div>
+
+                <div class="team-stat">
+
+                    <div class="team-stat-label">
+                        Favorite
+                    </div>
+
+                    <div class="team-stat-value">
+                        ${isFavorite(team.id) ? "★" : "☆"}
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="schedule-panel">
+
+            <div class="panel-header">
+
+                <div class="panel-title">
+                    ${escapeHtml(team.name || "Team")} Schedule
+                </div>
+
+                <div class="panel-subtitle">
+                    2026 Season
+                </div>
+
+            </div>
+
+            ${
+                games.length
+                ? games.map(renderScheduleGame).join("")
+                : `
+                    <div class="empty">
+                        <h3>No schedule available</h3>
+                        <p>
+                            The team schedule feed returned no games.
+                        </p>
+                    </div>
+                `
+            }
+
+        </div>
+    `;
+
+    updateFavoriteButton(team);
+}
+
+
+/* =============================================================
+   RENDER SCHEDULE GAME
+============================================================= */
+
+function renderScheduleGame(game) {
+
+    const date =
+        game.date ||
+        game.gameDate ||
+        "";
+
+    const opponent =
+        game.opponent ||
+        game.opponentName ||
+        game.team ||
+        "Unknown Opponent";
+
+    const location =
+        game.location ||
+        game.homeAway ||
+        "";
+
+    const status =
+        game.status ||
+        game.state ||
+        "";
+
+    const result =
+        game.result ||
+        "";
+
+    const score =
+        game.score ||
+        game.detail ||
+        "";
+
+    let resultClass = "result-upcoming";
+
+    if (
+        String(status).toLowerCase().includes("live") ||
+        String(status).toLowerCase().includes("progress")
+    ) {
+        resultClass = "result-live";
+    }
+
+    if (
+        String(result).toLowerCase() === "w" ||
+        String(result).toLowerCase() === "win"
+    ) {
+        resultClass = "result-win";
+    }
+
+    if (
+        String(result).toLowerCase() === "l" ||
+        String(result).toLowerCase() === "loss"
+    ) {
+        resultClass = "result-loss";
+    }
+
+    return `
+
+        <div class="schedule-row">
+
+            <div class="schedule-date">
+
+                <strong>
+                    ${escapeHtml(formatDate(date))}
+                </strong>
+
+                ${escapeHtml(formatTime(date))}
+
+            </div>
+
+            <div>
+
+                <div class="opponent">
+
+                    ${
+                        location === "away" ||
+                        location === "@" ||
+                        location === "Away"
+                        ? "@ "
+                        : ""
+                    }
+
+                    ${escapeHtml(
+                        stripAtSymbol(opponent)
+                    )}
+
+                </div>
+
+                <div class="opponent-meta">
+
+                    ${escapeHtml(
+                        status ||
+                        "Upcoming"
+                    )}
+
+                </div>
+
+            </div>
+
+            <div class="schedule-result ${resultClass}">
+
+                ${
+                    safeJson(score) ||
+                    safeJson(result) ||
+                    "—"
+                }
+
+            </div>
+
+        </div>
+    `;
+}
+
+
+/* =============================================================
+   OPEN TEAM BY NAME
+============================================================= */
+
+async function openTeamByName(name) {
+
+    const cleanName = String(name)
+        .replace(/\\'/g, "'")
+        .trim();
+
+    let team =
+        allTeams.find(
+            item =>
+                String(item.name || "").toLowerCase() ===
+                cleanName.toLowerCase()
+        );
+
+    if (!team) {
+
+        try {
+
+            const response =
+                await fetch(
+                    `/api/teams/search?q=${encodeURIComponent(cleanName)}`
+                );
+
+            if (response.ok) {
+
+                const data = await response.json();
+
+                const results =
+                    data.teams ||
+                    data.results ||
+                    data ||
+                    [];
+
+                if (Array.isArray(results) && results.length) {
+                    team = results[0];
+                }
+            }
+
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    if (!team) {
+
+        alert(
+            `Could not find ${cleanName}.`
+        );
+
+        return;
+    }
+
+    openTeam(team);
+}
+
+
+/* =============================================================
+   FAVORITES PAGE
+============================================================= */
+
+function renderFavorites() {
+
+    const container =
+        document.getElementById("favoritesContainer");
+
+    if (!container) {
+        return;
+    }
+
+    const favorites = getFavorites();
+
+    if (!favorites.length) {
+
+        container.innerHTML = `
+
+            <div class="empty">
+
+                <h3>
+                    No favorite teams yet
+                </h3>
+
+                <p>
+                    Open a team and press the ☆ Favorite button.
+                </p>
+
+            </div>
+        `;
+
+        return;
+    }
+
+    container.innerHTML = `
+
+        <div class="favorite-grid">
+
+            ${
+                favorites.map(team => `
+
+                    <div class="favorite-card"
+                         onclick='openTeam(${JSON.stringify(team)})'>
+
+                        <div>
+
+                            <div class="favorite-name">
+                                ${escapeHtml(team.name)}
+                            </div>
+
+                            <div class="team-result-meta">
+                                ${escapeHtml(team.abbreviation || "")}
+                            </div>
+
+                        </div>
+
+                        <button
+                            class="favorite-remove"
+                            onclick='event.stopPropagation(); removeFavorite("${escapeAttribute(team.id)}")'
+                            title="Remove favorite">
+                            ×
+                        </button>
+
+                    </div>
+
+                `).join("")
+            }
+
+        </div>
+    `;
+}
+
+
+function removeFavorite(teamId) {
+
+    const favorites =
+        getFavorites().filter(
+            team =>
+                String(team.id) !==
+                String(teamId)
+        );
+
+    saveFavorites(favorites);
+}
+
+
+/* =============================================================
+   DATE HELPERS
+============================================================= */
+
+function formatDate(value) {
+
+    if (!value) {
+        return "";
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return String(value);
+    }
+
+    return date.toLocaleDateString(
+        undefined,
+        {
+            month: "short",
+            day: "numeric"
+        }
+    );
+}
+
+
+function formatTime(value) {
+
+    if (!value) {
+        return "";
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return "";
+    }
+
+    return date.toLocaleTimeString(
+        undefined,
+        {
+            hour: "numeric",
+            minute: "2-digit"
+        }
+    );
+}
+
+
+function stripAtSymbol(value) {
+
+    return String(value || "")
+        .replace(/^@\s*/, "");
+}
+
+
+/* =============================================================
+   ESCAPE HELPERS
+============================================================= */
+
+function escapeHtml(value) {
+
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+
+function escapeAttribute(value) {
+
+    return escapeHtml(value);
+}
+
+
+/* =============================================================
+   REFRESH SCORES
+============================================================= */
+
+async function refreshScores() {
+
+    try {
+
+        const response =
+            await fetch("/api/games");
+
+        if (!response.ok) {
+            return;
+        }
+
+        const data =
+            await response.json();
+
+        const games =
+            data.games ||
+            data ||
+            [];
+
+        if (!Array.isArray(games)) {
+            return;
+        }
+
+        const live =
+            games.filter(
+                game =>
+                    game.state === "in" ||
+                    game.status === "in"
+            ).length;
+
+        const final =
+            games.filter(
+                game =>
+                    game.state === "post" ||
+                    game.status === "post"
+            ).length;
+
+        document.getElementById(
+            "gamesCount"
+        ).textContent = games.length;
+
+        document.getElementById(
+            "liveCount"
+        ).textContent = live;
+
+        document.getElementById(
+            "finalCount"
+        ).textContent = final;
+
+        document.getElementById(
+            "updatedTime"
+        ).textContent =
+            new Date().toLocaleTimeString(
+                undefined,
+                {
+                    hour: "numeric",
+                    minute: "2-digit"
+                }
+            );
+
+    } catch (error) {
+
+        console.error(
+            "Score refresh failed:",
+            error
+        );
+    }
+}
+
+
+/* =============================================================
+   INITIALIZATION
+============================================================= */
+
+async function initialize() {
+
+    await loadRankings();
+
+    await loadTeams();
+
+    renderFavorites();
+
+    document.getElementById(
+        "updatedTime"
+    ).textContent =
+        new Date().toLocaleTimeString(
+            undefined,
+            {
+                hour: "numeric",
+                minute: "2-digit"
+            }
+        );
+}
+
+
+initialize();
+
+
+/* =============================================================
+   AUTO REFRESH
+============================================================= */
+
+setInterval(
+    refreshScores,
+    30000
+);
+
+
+/* =============================================================
+   CLOSE SEARCH RESULTS WHEN CLICKING ELSEWHERE
+============================================================= */
+
+document.addEventListener(
+    "click",
+    event => {
+
+        const searchBoxes = [
+            "teamSearch",
+            "teamsSearch"
+        ];
+
+        const resultBoxes = [
+            "searchResults",
+            "teamsSearchResults"
+        ];
+
+        searchBoxes.forEach((id, index) => {
+
+            const input =
+                document.getElementById(id);
+
+            const results =
+                document.getElementById(
+                    resultBoxes[index]
+                );
+
+            if (
+                input &&
+                results &&
+                event.target !== input &&
+                !results.contains(event.target)
+            ) {
+                results.style.display = "none";
+            }
+
+        });
+
+    }
+);
+
+</script>
+
+</body>
+</html>
