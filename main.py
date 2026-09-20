@@ -8,7 +8,14 @@ app = FastAPI()
 
 templates = Jinja2Templates(directory="templates")
 
-BASE_URL = "https://site.web.api.espn.com/apis/site/v2/sports/football/college-football"
+BASE_URL = "https://site.api.espn.com/apis/site/v2/sports/football/college-football"
+
+ESPN_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
+    "Accept": "application/json,text/plain,*/*",
+    "Referer": "https://www.espn.com/",
+    "Origin": "https://www.espn.com",
+}
 
 SCOREBOARD_URL = f"{BASE_URL}/scoreboard"
 TEAMS_URL = f"{BASE_URL}/teams"
@@ -19,16 +26,7 @@ def espn_get(url, params=None):
         url,
         params=params,
         timeout=15,
-        headers={
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/142.0.0.0 Safari/537.36"
-            ),
-            "Accept": "application/json, text/plain, */*",
-            "Referer": "https://www.espn.com/",
-            "Origin": "https://www.espn.com",
-        }
+        headers=ESPN_HEADERS
     )
     response.raise_for_status()
     return response.json()
@@ -39,7 +37,9 @@ def espn_get(url, params=None):
 # ---------------------------------------------------------
 
 def get_games():
-    today = datetime.now().strftime("%Y%m%d")
+    # ESPN timestamps/data are UTC-facing; use Eastern Time for the site's game day.
+    from zoneinfo import ZoneInfo
+    today = datetime.now(ZoneInfo("America/New_York")).strftime("%Y%m%d")
 
     data = espn_get(
         SCOREBOARD_URL,
@@ -443,14 +443,14 @@ def get_rankings():
     # includes rankings directly in the scoreboard response.
 
     try:
-        today = datetime.now().strftime("%Y%m%d")
+        from zoneinfo import ZoneInfo
+        today = datetime.now(ZoneInfo("America/New_York")).strftime("%Y%m%d")
 
         data = espn_get(
             SCOREBOARD_URL,
             {
                 "dates": today,
-                "groups": 80,
-                "limit": 100
+                "limit": 500
             }
         )
 
