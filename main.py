@@ -1371,9 +1371,30 @@ def api_scores():
     "/",
     response_class=HTMLResponse,
 )
-def home(
-    request: Request
-):
+def home(request: Request):
+
+    try:
+        score_data = get_current_scores()
+
+        games = score_data.get("games", [])
+        live_games = score_data.get("live_games", 0)
+        final_games = score_data.get("final_games", 0)
+
+    except Exception:
+        games = []
+        live_games = 0
+        final_games = 0
+
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={
+            "games": games,
+            "live_games": live_games,
+            "final_games": final_games,
+            "local_date": datetime.now().strftime("%Y-%m-%d"),
+        },
+    )
 
     try:
 
