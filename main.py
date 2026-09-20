@@ -1212,6 +1212,156 @@ def api_rankings():
             },
         )
 
+# =========================================================
+# SCORES API
+# =========================================================
+
+_scores_cache = {
+    "timestamp": 0,
+    "data": None,
+}
+
+
+def get_current_scores():
+    """
+    Get college football games for today from the NCAA API.
+
+    NCAA returns dates as MM/DD/YYYY, so we compare against
+    that format instead of ISO YYYY-MM-DD.
+    """
+
+    now = datetime.now()
+
+    today_ncaa = now.strftime("%m/%d/%Y")
+    today_iso = now.strftime("%Y-%m-%d")
+
+    cached = _scores_cache.get("data")
+    cache_age = (
+        now.timestamp()
+        - _scores_cache.get("timestamp", 0)
+    )
+
+    if cached is not None and cache_age < 30:
+        return cached
+
+    all_games = []
+    seen_ids = set()
+
+    # NCAA FBS weeks.
+    for week in range(1, 19):
+
+        try:
+            data = get_scoreboard_for_week(week)
+
+        except Exception:
+            continue
+
+        for raw_game in data.get("games", []):
+
+            try:
+                game = normalize_game(raw_game)
+
+            except Exception:
+                continue
+
+            game_id = str(
+                game.get("id") or ""
+            )
+
+            if game_id and game_id in seen_ids:
+                continue
+
+            if game_id:
+                seen_ids.add(game_id)
+
+            # -------------------------------------------------
+            # NCAA date format:
+            # 09/19/2026
+            # -------------------------------------------------
+
+            raw_game_data = (
+                raw_game.get("game", {})
+                if isinstance(raw_game, dict)
+                else {}
+            )
+
+            start_date = str(
+                raw_game_data.get(
+                    "startDate",
+                    ""
+                )
+            )
+
+            # Also support ISO dates if another NCAA
+            # response format is encountered.
+            game_date = str(
+                game.get("date_raw") or ""
+            )
+
+            if (
+                today_ncaa not in start_date
+                and today_iso not in game_date
+                and today_ncaa not in game_date
+            ):
+                continue
+
+            all_games.append(game)
+
+    all_games.sort(
+        key=lambda game: str(
+            game.get("date_raw")
+            or game.get("date")
+            or ""
+        )
+    )
+
+    live_games = sum(
+        1
+        for game in all_games
+        if game.get("state") == "in"
+    )
+
+    final_games = sum(
+        1
+        for game in all_games
+        if game.get("state") == "post"
+    )
+
+    result = {
+        "games": all_games,
+        "live_games": live_games,
+        "final_games": final_games,
+        "total_games": len(all_games),
+        "updated": datetime.now()
+            .strftime("%I:%M %p")
+            .lstrip("0"),
+        "date": today_iso,
+    }
+
+    _scores_cache["timestamp"] = now.timestamp()
+    _scores_cache["data"] = result
+
+    return result
+
+
+@app.get("/api/scores")
+def api_scores():
+
+    try:
+        return get_current_scores()
+
+    except Exception as exc:
+
+        return JSONResponse(
+            status_code=502,
+            content={
+                "games": [],
+                "live_games": 0,
+                "final_games": 0,
+                "total_games": 0,
+                "error": str(exc),
+            },
+        )
 
 # =========================================================
 # HOME
@@ -1295,3 +1445,4 @@ def home(
                 ),
         },
     )
+
